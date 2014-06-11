@@ -1,0 +1,65 @@
+name: drunken-tyrion
+registries:
+ships:
+    local: {ip: localhost, docker_port: 2375}
+services:
+  proxy:
+    image: gregory90/nginx-my:latest
+    instances:
+      proxy-1:
+        ship: local 
+        ports: 
+            proxy:
+                exposed: 80
+                external: 80
+        lifecycle:
+          running: [{type: tcp, port: proxy}]
+        cmd: /sbin/my_init
+
+  app:
+    image: gregory90/nodejs-my:latest
+    instances:
+      app-1:
+        ship: local 
+        ports: 
+            node:
+                exposed: 3000
+                external: [127.0.0.1, 3000]
+        lifecycle:
+          running: [{type: tcp, port: node}]
+        env:
+            MONGODB_HOST: mongodb.dev.docker
+            MONGODB_PORT: 27017
+            EXPRESS_PORT: 3000
+            NODE_ENV: production 
+        cmd: /sbin/my_init
+
+  db:
+    image: gregory90/mongodb:latest
+    instances:
+      db-1:
+        ship: local 
+        ports: 
+            db:
+                exposed: 27017
+                external: [127.0.0.1, 27017]
+        lifecycle:
+          running: [{type: tcp, port: db}]
+        volumes:
+            /data/db: /data/drunken-tyrion/mongodb
+        cmd: /sbin/my_init
+
+  redis:
+    image: gregory90/redis:latest
+    instances:
+      redis-1:
+        ship: local 
+        ports: 
+            redis:
+                exposed: 6379
+                external: [127.0.0.1, 6379]
+        lifecycle:
+          running: [{type: tcp, port: redis}]
+        volumes:
+            /data: /data/drunken-tyrion/redis
+        cmd: /sbin/my_init
