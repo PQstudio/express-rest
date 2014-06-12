@@ -4,8 +4,8 @@ var ClientModel         = require('app/oAuth2/ClientModel').ClientModel;
 var log = require("winston").loggers.get("app:server");
 
 function getUsersMe(req, res) {
-    //res.send(process.env);
-    res.status(200).json({"user":{ "email": "gregory90@gmail.com"}})
+    res.send(process.env);
+    //res.status(200).json({"user":{ "email": "gregory90@gmail.com"}})
 }
 
 function postUser(req, res) {
