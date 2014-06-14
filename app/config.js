@@ -12,7 +12,7 @@ config.mongodb = {
   username: process.env.MONGODB_USERNAME,
   password: process.env.MONGODB_PASSWORD,
   db: process.env.MONGODB_DATABASE,
-  url: process.env.MONGODB_URL
+  url: process.env.MONGO_URL
 };
 
 config.oauth2 = {
