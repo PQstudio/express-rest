@@ -8,7 +8,11 @@ config.express = {
 
 config.mongodb = {
   port: process.env.MONGODB_PORT,
-  host: process.env.MONGODB_HOST
+  host: process.env.MONGODB_HOST,
+  username: process.env.MONGODB_USERNAME,
+  password: process.env.MONGODB_PASSWORD,
+  db: process.env.MONGODB_DATABASE,
+  url: process.env.MONGODB_URL
 };
 
 config.oauth2 = {

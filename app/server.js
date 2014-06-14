@@ -9,7 +9,8 @@ var app = express();
 
 var log = require("winston").loggers.get("app:server");
 
-mongoose.connect("mongodb://"+config.mongodb.host+":"+config.mongodb.port+"/testAPIconfig");
+//mongoose.connect("mongodb://"+config.mongodb.host+":"+config.mongodb.port+"/testAPIconfig");
+mongoose.connect(config.mongodb.url);
 var db = mongoose.connection;
 
 
