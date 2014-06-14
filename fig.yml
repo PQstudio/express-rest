@@ -9,20 +9,18 @@ app:
         MONGODB_PORT: 27017
         EXPRESS_PORT: 3000
         NODE_ENV: dev 
-    command: /sbin/my_init -- nodemon --ignore /code/data app/server
+    command: nodemon app/server
 
 db:
     image: gregory90/mongodb
     ports:
-        - "127.0.0.1:27017:27017"
+        - "27017:27017"
     volumes:
-        - /data/drunken-tyrion/mongodb/:/data/db
-    command: /sbin/my_init
+        - /data/drunken-tyrion/staging/mongodb/:/data/db
 
 redis:
     image: gregory90/redis
     ports:
-        - "127.0.0.1:6379:6379"
+        - "6379:6379"
     volumes:
-        - /data/drunken-tyrion/redis/:/data
-    command: /sbin/my_init
+        - /data/drunken-tyrion/staging/redis/:/data

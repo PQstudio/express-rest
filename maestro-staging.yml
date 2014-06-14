@@ -4,7 +4,7 @@ ships:
     local: {ip: localhost, docker_port: 2375}
 services:
   #proxy:
-    #image: gregory90/nginx-my:latest
+    #image: gregory90/nginx-drunken-tyrion:latest
     #instances:
       #proxy-1:
         #ship: local 
@@ -14,10 +14,9 @@ services:
                 #external: 80
         #lifecycle:
           #running: [{type: tcp, port: proxy}]
-        #cmd: /sbin/my_init
 
   app:
-    image: gregory90/nodejs-my:latest
+    image: gregory90/nodejs-drunken-tyrion:latest
     instances:
       app-staging-1:
         ship: local 
@@ -32,7 +31,6 @@ services:
             MONGODB_PORT: 27018
             EXPRESS_PORT: 3001
             NODE_ENV: production 
-        cmd: /sbin/my_init
 
   db:
     image: gregory90/mongodb:latest
@@ -47,7 +45,6 @@ services:
           running: [{type: tcp, port: db}]
         volumes:
             /data/db: /data/drunken-tyrion/staging/mongodb
-        cmd: /sbin/my_init
 
   redis:
     image: gregory90/redis:latest
@@ -62,4 +59,3 @@ services:
           running: [{type: tcp, port: redis}]
         volumes:
             /data: /data/drunken-tyrion/staging/redis
-        cmd: /sbin/my_init
