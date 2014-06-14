@@ -12,6 +12,7 @@ var log = require("winston").loggers.get("app:server");
 mongoose.connect("mongodb://"+config.mongodb.host+":"+config.mongodb.port+"/testAPIconfig");
 var db = mongoose.connection;
 
+
 db.on('error', function (err) {
     log.error('connection error:', err.message);
 });
