@@ -7,14 +7,20 @@ app:
     environment:
         MONGODB_HOST: mongodb.dev.docker
         MONGODB_PORT: 27017
+        MONGO_URL: mongodb://mongodb.dev.docker:27017/drunken-tyrion-production
         EXPRESS_PORT: 3000
         NODE_ENV: dev 
+        REDIS_PORT: 6379
+        REDIS_HOST: redis.dev.docker
+        RECAPTCHA_PUBLICKEY: 6LfIZvMSAAAAALJ-linwr9yxy1eTlwTDYOaiPU_A
+        RECAPTCHA_PRIVATEKEY: 6LfIZvMSAAAAABef7WkJT001DGmw5xj5SJDeKAlz
+        MAILGUN_APIKEY: key-6x9z6r91d9nhnjetj65hmb0ckftniwc6
     command: nodemon app/server
 
 db:
     image: gregory90/mongodb
     ports:
-        - "27017:27017"
+        - "27018:27017"
     volumes:
         - /data/drunken-tyrion/staging/mongodb/:/data/db
 

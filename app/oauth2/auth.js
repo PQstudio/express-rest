@@ -1,12 +1,14 @@
 var config                  = require('app/config');
+
 var passport                = require('passport');
 var BearerStrategy          = require('passport-http-bearer').Strategy;
 var BasicStrategy = require('passport-http').BasicStrategy;
 var ClientPasswordStrategy  = require('passport-oauth2-client-password').Strategy;
-var UserModel           = require('app/users/UserModel').UserModel;
-var ClientModel         = require('app/oAuth2/ClientModel').ClientModel;
-var AccessTokenModel    = require('app/oAuth2/AccessTokenModel').AccessTokenModel;
-var RefreshTokenModel   = require('app/oAuth2/RefreshTokenModel').RefreshTokenModel;
+
+var UserModel           = require('app/users/models/UserModel');
+var ClientModel         = require('app/oauth2/models/ClientModel');
+var AccessTokenModel    = require('app/oauth2/models/AccessTokenModel');
+var RefreshTokenModel   = require('app/oauth2/models/RefreshTokenModel');
 
 passport.use(new BasicStrategy(
     function(username, password, done) {

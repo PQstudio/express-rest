@@ -21,4 +21,4 @@ var Client = new Schema({
 
 var ClientModel = mongoose.model('Client', Client);
 
-module.exports.ClientModel = ClientModel;
+module.exports = ClientModel;

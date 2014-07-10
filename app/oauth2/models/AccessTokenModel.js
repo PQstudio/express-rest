@@ -24,4 +24,4 @@ var AccessToken = new Schema({
 
 var AccessTokenModel = mongoose.model('AccessToken', AccessToken);
 
-module.exports.AccessTokenModel = AccessTokenModel;
+module.exports = AccessTokenModel;

@@ -1,4 +1,4 @@
-var oauth2  = require('app/oAuth2/oauth2');
+var oauth2  = require('app/oauth2/oauth2');
 
 function setup(app) {
     app.namespace('/oauth/v2', function(){

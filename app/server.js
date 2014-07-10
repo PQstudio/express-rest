@@ -3,23 +3,12 @@ require('express-namespace');
 var config = require("app/config");
 var express = require("express");
 var passport = require("passport");
-var mongoose = require("mongoose");
 var bodyParser = require('body-parser');
 var app = express();
 
-var log = require("winston").loggers.get("app:server");
+var db = require('app/modules/db');
 
-//mongoose.connect("mongodb://"+config.mongodb.host+":"+config.mongodb.port+"/testAPIconfig");
-mongoose.connect(config.mongodb.url);
-var db = mongoose.connection;
-
-
-db.on('error', function (err) {
-    log.error('connection error:', err.message);
-});
-db.once('open', function callback () {
-    log.info("Connected to DB!");
-});
+var log = require("app/modules/logger");
 
 app.set("views", __dirname);
 app.set("view engine", "jade");
@@ -29,12 +18,14 @@ app.use(bodyParser());
 
 [
 "app/users/routes",
-"app/oAuth2/routes"
+"app/oauth2/routes",
+"app/recaptcha/routes",
+"app/fileUpload/routes"
 ].forEach(function (routePath) {
     require(routePath)(app);
 });
 
-app.use(require("../app/middleware").notFound);
+app.use(require("app/middleware").notFound);
 
 app.listen(config.express.port, config.express.ip, function (error) {
     if (error) {

@@ -15,9 +15,23 @@ config.mongodb = {
   url: process.env.MONGO_URL
 };
 
+config.redis = {
+  port: process.env.REDIS_PORT,
+  host: process.env.REDIS_HOST
+};
+
 config.oauth2 = {
   tokenLifetime: 3600
 };
+
+config.recaptcha = {
+  publickey: process.env.RECAPTCHA_PUBLICKEY,
+  privatekey: process.env.RECAPTCHA_PRIVATEKEY
+}
+
+config.mailgun = {
+  apikey: process.env.MAILGUN_APIKEY
+}
 
 if (PRODUCTION) {
   //use different mongodb in production here, for example
