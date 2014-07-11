@@ -33,6 +33,18 @@ config.mailgun = {
   apikey: process.env.MAILGUN_APIKEY
 }
 
+
+config.app = {
+    fileUpload: {
+        tmpPath: "data/uploads/tmp/",
+        profile: {
+            path: "data/uploads/profile/",
+            allowedMimeTypes: ['application/vnd.ms-excel'],
+            maxSize: 2000000
+        }
+    }
+}
+
 if (PRODUCTION) {
   //use different mongodb in production here, for example
 }

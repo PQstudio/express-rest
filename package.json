@@ -29,6 +29,7 @@
     "request": "~2.36.0",
     "re-captcha": "0.0.3",
     "mailgun": "~0.4.2",
-    "formidable": "~1.0.15"
+    "formidable": "~1.0.15",
+    "fs-extra": "~0.10.0"
   }
 }

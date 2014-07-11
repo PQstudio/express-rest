@@ -14,7 +14,8 @@ app.set("views", __dirname);
 app.set("view engine", "jade");
 
 app.use(passport.initialize());
-app.use(bodyParser());
+app.use(bodyParser.json())
+   .use(bodyParser.urlencoded({ extended: false }));
 
 [
 "app/users/routes",

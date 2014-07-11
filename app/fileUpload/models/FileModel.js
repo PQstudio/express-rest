@@ -2,6 +2,7 @@ var mongoose = require("mongoose");
 var validate = require('mongoose-validator').validate;
 var screen = require('screener').screen;
 var validator = require('validator');
+var config = require('app/config');
 
 var Schema = mongoose.Schema;
 
@@ -12,6 +13,10 @@ var Schema = mongoose.Schema;
 
 // schema
 var File = new Schema({
+    name: {
+        type: String,
+        required: true
+    },
     filename: {
         type: String,
         required: true
@@ -28,25 +33,55 @@ var File = new Schema({
         type: String,
         required: true
     },
+    size: {
+        type: Number,
+        required: true
+    },
     created: {
         type: Date,
         default: Date.now
     }
 });
 
+File.methods.validateFile = function(cb) {
+    var err = [];
+
+    var fileConfig = config.app.fileUpload[this.type];
+
+    if(fileConfig == undefined) {
+        err.push('type_not_allowed');
+        cb(err);
+        return;
+    }
+
+    var path = config.app.fileUpload.tmpPath;
+
+    if(this.size > fileConfig.maxSize) {
+        err.push('file_size_too_big');
+    }
+
+    if(fileConfig.allowedMimeTypes.indexOf(this.mimeType) < 0) {
+        err.push('mime_type_not_allowed');
+    }
+
+    cb(err, path);
+};
+
 var FileModel = mongoose.model('File', File);
 
 
 // screeners
-//var get = function(object) {
-    //return screen(object, {
-        //id: 'string',
-        //email: 'string',
-        //facebookId: 'string'
-    //});
-//}
+var get = function(object) {
+    return screen(object, {
+        id: 'string',
+        name: 'string',
+        uniqueId: 'string',
+        type: 'string',
+        size: 'integer'
+    });
+}
 
 
 module.exports = FileModel;
-//module.exports.userGetScreen = get;
+module.exports.fileGetScreen = get;
 
