@@ -1,4 +1,5 @@
 var passport = require("passport");
+var crypto              = require('crypto');
 
 var UserModel           = require('app/users/models/UserModel');
 var userGetScreen       = require('app/users/models/UserModel').userGetScreen;
@@ -12,6 +13,9 @@ var log = require('app/modules/logger');
 var rate = require('app/modules/rate');
 
 var acl = require('app/modules/acl');
+
+var userEvents = require('app/users/events/userEvents');
+require('app/users/eventListeners/userEventsListener');
 
 
 var getUsersMeLimiter = rate(10, 20);
@@ -33,6 +37,7 @@ function getUser(req, res) {
     });
 }
 
+var postUserLimiter = rate(10, 20);
 function postUser(req, res) {
     var user = new UserModel({
         email: req.body.email,
@@ -57,11 +62,131 @@ function postUser(req, res) {
     });
 }
 
+var patchUserLimiter = rate(10, 20);
+function patchUser(req, res) {
+    var user = {
+        currentPassword: req.body.currentPassword,
+    };
+
+    if (!req.userById.checkPassword(user.currentPassword)) { res.status(400).json({error: "wrong_password"});}
+
+    if(req.body.email !== undefined) {
+        req.userById.email = req.body.email;
+    }
+
+    req.userById.save(function (err, user) {
+        if (!err) {
+            log.info("user updated");
+
+            res.status(201).json({user: userGetScreen(user)});
+        } else {
+            if(err.name == 'ValidationError') {
+                res.statusCode = 400;
+                res.send(err);
+            }             
+        }
+    });
+}
+
+var deleteUserLimiter = rate(10, 20);
+function deleteUser(req, res) {
+    var user = {
+        currentPassword: req.body.currentPassword,
+    };
+
+    if (!req.userById.checkPassword(user.currentPassword)) { res.status(400).json({error: "wrong_password"});}
+
+    req.userById.remove({}, function (err) {
+        if (!err) {
+            log.info("user deleted");
+
+            res.status(204).send();
+        } else {
+            if(err.name == 'ValidationError') {
+                res.statusCode = 400;
+                res.send(err);
+            }             
+        }
+    });
+}
+
+var putUsersForgotPasswordLimiter = rate(10, 20);
+function putUsersForgotPassword(req, res) {
+    email = req.body.email;
+
+    UserModel.findOne({email: email}, function(err, user) {
+        if(err) {
+			res.json(500, {error: err});
+		}
+        if(!user) {
+			res.json(204, {});
+		}
+
+        user.changePassToken = crypto.randomBytes(32).toString('base64');
+        user.changePassTokenDate = Date.now();
+
+        user.save();
+
+        userEvents.emit('user:password:forgot', user);
+
+        res.status(204).json({});
+    });
+}
+
+var patchUsersChangePasswordLimiter = rate(10, 20);
+function patchUsersChangePassword(req, res) {
+    token = req.body.token;
+    password = req.body.password;
+
+    if (password === undefined) {
+	    res.json(400, {error: "password_not_set", errorMessage: "There were no password set"});
+    }
+
+    UserModel.findOne({changePassToken: token}, function(err, user) {
+        if(err) {
+			res.json(500, {error: err});
+		}
+        if(!user) {
+			res.json(400, {error: "token_doesnt_exist", errorMessage: "Providen token does not exist in database"});
+		} else {
+            now = new Date();
+            now.setMinutes(now.getMinutes() - 10);
+
+            if(user.changePassTokenDate <= now) {
+                user.changepasstoken = null;
+                user.changepasstokendate = null;
+
+                user.save();
+            
+                res.json(422, {error: "token_time_expired", errorMessage: "Token time expired"});
+            } else {
+                user.password = password;
+                user.changepasstoken = null;
+                user.changepasstokendate = null;
+            
+                user.save();
+
+                userEvents.emit('user:password:forgot:change', user);
+                userEvents.emit('user:password:change', user);
+
+                res.status(204).json({});
+            }
+        }
+    });
+}
+
 function setup(app) {
     app.namespace('/api/v1', function(){
-        app.post('/users', postUser);
+        app.put('/users/forgot-password', putUsersForgotPasswordLimiter, putUsersForgotPassword);
+        app.patch('/users/change-password', patchUsersChangePasswordLimiter, patchUsersChangePassword);
+
+        app.post('/users', postUserLimiter, postUser);
         app.get('/users/me', getUsersMeLimiter, passport.authenticate('bearer', { session: false }), getUsersMe);
         app.get('/users/:id', getUserLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, getUser);
+        app.patch('/users/:id', patchUserLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, patchUser);
+        app.delete('/users/:id', deleteUserLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, deleteUser);
+
+
     });
 }
 

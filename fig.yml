@@ -20,7 +20,7 @@ app:
 db:
     image: gregory90/mongodb
     ports:
-        - "27018:27017"
+        - "27017:27017"
     volumes:
         - /data/drunken-tyrion/staging/mongodb/:/data/db
 
