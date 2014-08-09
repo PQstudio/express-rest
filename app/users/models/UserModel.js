@@ -8,7 +8,7 @@ var Schema = mongoose.Schema;
 
 // validators
 var emailValidator = [validate('isEmail'), validate('len', 5, 100)];
-var tokenValidator = [validate('len', 5, 255)];
+var tokenValidator = [validate('len', 5, 255), validate('isNull')];
 var dateValidator = [validate('isDate')];
 
 
@@ -27,20 +27,16 @@ var User = new Schema({
         type: String,
     },
     facebookId: {
-        type: String,
-        validate: tokenValidator
+        type: String
     },
     facebookAccessToken: {
-        type: String,
-        validate: tokenValidator
+        type: String
     },
     changePassToken: {
-        type: String,
-        validate: tokenValidator
+        type: String
     },
     changePassTokenDate: {
-        type: Date,
-        validate: dateValidator
+        type: Date
     },
     created: {
         type: Date,

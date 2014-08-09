@@ -64,49 +64,69 @@ function postUser(req, res) {
 
 var patchUserLimiter = rate(10, 20);
 function patchUser(req, res) {
-    var user = {
-        currentPassword: req.body.currentPassword,
-    };
+    acl.isAllowed(req.user.id, 'users/'+req.userById.id, 'edit').then(function(result) {
+        if(result) {
+            var user = {
+                currentPassword: req.body.currentPassword,
+            };
 
-    if (!req.userById.checkPassword(user.currentPassword)) { res.status(400).json({error: "wrong_password"});}
+            if (!req.userById.checkPassword(user.currentPassword)) { res.status(400).json({error: "wrong_password"});}
 
-    if(req.body.email !== undefined) {
-        req.userById.email = req.body.email;
-    }
+            if(req.body.email !== undefined) {
+                req.userById.email = req.body.email;
 
-    req.userById.save(function (err, user) {
-        if (!err) {
-            log.info("user updated");
+                req.userById.save(function (err, user) {
+                    if (!err) {
+                        log.info("user updated");
 
-            res.status(201).json({user: userGetScreen(user)});
+                        userEvents.emit('user:email:changed', user);
+
+                        res.status(201).json({user: userGetScreen(user)});
+                    } else {
+                        if(err.name == 'ValidationError') {
+                            res.statusCode = 400;
+                            res.send(err);
+                        }             
+                    }
+                });
+            }
         } else {
-            if(err.name == 'ValidationError') {
-                res.statusCode = 400;
-                res.send(err);
-            }             
+            res.status(403).json({error: "Action forbidden!"});
         }
+    }, 
+    function(err) {
+        res.status(500).json({error: "Server error"});
     });
 }
 
 var deleteUserLimiter = rate(10, 20);
 function deleteUser(req, res) {
-    var user = {
-        currentPassword: req.body.currentPassword,
-    };
+    acl.isAllowed(req.user.id, 'users/'+req.userById.id, 'view').then(function(result) {
+        if(result) {
+            var user = {
+                currentPassword: req.body.currentPassword,
+            };
 
-    if (!req.userById.checkPassword(user.currentPassword)) { res.status(400).json({error: "wrong_password"});}
+            if (!req.userById.checkPassword(user.currentPassword)) { res.status(400).json({error: "wrong_password"});}
 
-    req.userById.remove({}, function (err) {
-        if (!err) {
-            log.info("user deleted");
+            req.userById.remove({}, function (err) {
+                if (!err) {
+                    log.info("user deleted");
 
-            res.status(204).send();
+                    res.status(204).send();
+                } else {
+                    if(err.name == 'ValidationError') {
+                        res.statusCode = 400;
+                        res.send(err);
+                    }             
+                }
+            });
         } else {
-            if(err.name == 'ValidationError') {
-                res.statusCode = 400;
-                res.send(err);
-            }             
+            res.status(403).json({error: "Action forbidden!"});
         }
+    }, 
+    function(err) {
+        res.status(500).json({error: "Server error"});
     });
 }
 
@@ -153,16 +173,18 @@ function patchUsersChangePassword(req, res) {
             now.setMinutes(now.getMinutes() - 10);
 
             if(user.changePassTokenDate <= now) {
-                user.changepasstoken = null;
-                user.changepasstokendate = null;
+                user.changePassToken = null;
+                user.changePassTokenDate = null;
 
-                user.save();
+                user.save(function(err, user){
+                    console.log(err);
+                });
             
                 res.json(422, {error: "token_time_expired", errorMessage: "Token time expired"});
             } else {
                 user.password = password;
-                user.changepasstoken = null;
-                user.changepasstokendate = null;
+                user.changePassToken = null;
+                user.changePassTokenDate = null;
             
                 user.save();
 
@@ -172,6 +194,30 @@ function patchUsersChangePassword(req, res) {
                 res.status(204).json({});
             }
         }
+    });
+}
+
+var getUserLinksLimiter = rate(10, 20);
+function getUserLinks(req, res) {
+    acl.isAllowed(req.user.id, 'users/'+req.userById.id, 'view').then(function(result) {
+        if(result) {
+            providers = {};
+
+            if(req.userById.email !== null && req.userById.email !== undefined) {
+                providers.email = req.userById.email;
+            }
+
+            if(req.userById.facebookId !== null && req.userById.facebookId !== undefined) {
+                providers.facebookId = req.userById.facebookId;
+            }
+
+            res.status(200).json({providers: providers});
+        } else {
+            res.status(403).json({error: "Action forbidden!"});
+        }
+    }, 
+    function(err) {
+        res.status(500).json({error: "Server error"});
     });
 }
 
@@ -185,6 +231,8 @@ function setup(app) {
         app.get('/users/:id', getUserLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, getUser);
         app.patch('/users/:id', patchUserLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, patchUser);
         app.delete('/users/:id', deleteUserLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, deleteUser);
+
+        app.get('/users/:id/links', getUserLinksLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, getUserLinks);
 
 
     });

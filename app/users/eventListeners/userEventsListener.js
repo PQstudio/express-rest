@@ -12,3 +12,9 @@ userEvents.on('user:password:forgot', function(user) {
     });
 
 });
+
+userEvents.on('user:email:changed', function(user) {
+
+    console.log('mail changed');
+
+});
