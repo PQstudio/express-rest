@@ -17,6 +17,8 @@ var acl = require('app/modules/acl');
 var userEvents = require('app/users/events/userEvents');
 require('app/users/eventListeners/userEventsListener');
 
+var request             = require('request');
+
 
 var getUsersMeLimiter = rate(10, 20);
 function getUsersMe(req, res) {
@@ -221,10 +223,105 @@ function getUserLinks(req, res) {
     });
 }
 
+var postUserLinkLimiter = rate(10, 20);
+function postUserLink(req, res) {
+    acl.isAllowed(req.user.id, 'users/'+req.userById.id, 'edit').then(function(result) {
+        if(result) {
+            accessToken = req.body.accessToken;
+            slug = req.params.slug;
+
+            allowedProviders = ["facebook"];
+
+            if(slug === undefined || allowedProviders.indexOf(slug) === -1) {
+                res.json(400, {error: "unknown_provider", errorMessage: "Specified provider doesnt exist"});
+            } else {
+                switch(slug) {
+                    case 'facebook':
+                        request('https://graph.facebook.com/v2.0/me?access_token='+accessToken, function (error, response, body) {
+                            if(error || response.statusCode != 200) {
+                                res.status(400).json({error: "wrong or expired access_token"});
+                            } else {
+                                var json = JSON.parse(body);
+
+                                var facebookId = json.id;
+                                var email = json.email;
+
+                                // check if user with given facebook id already exists
+                                UserModel.findOne({ facebookId: facebookId }, function(err, user) { 
+                                    if(err) {
+                                        res.json(500, {error: err});
+                                    }
+                                    if(!user) {
+                                        req.userById.facebookId = facebookId;
+                                        req.userById.facebookAccessToken = accessToken;
+
+                                        req.userById.save();
+                                        res.json(201, {});
+                                    } else {
+                                        res.json(400, {error: "account_already_linked", errorMessage: "Given account is already linked to account in system"});
+                                    }
+                                });
+                            }
+                         });
+                    break;
+                }
+            }
+        } else {
+            res.status(403).json({error: "Action forbidden!"});
+        }
+    }, 
+    function(err) {
+        res.status(500).json({error: "Server error"});
+    });
+}
+
+var deleteUserLinkLimiter = rate(10, 20);
+function deleteUserLink(req, res) {
+    acl.isAllowed(req.user.id, 'users/'+req.userById.id, 'delete').then(function(result) {
+        if(result) {
+            accessToken = req.body.access_token;
+            slug = req.params.slug;
+
+            providers = [];
+
+            if(req.userById.facebookId !== null && req.userById.facebookId !== undefined) {
+                providers.push('facebook');
+            }
+
+            if(slug === undefined || providers.indexOf(slug) === -1) {
+                res.json(400, {error: "unknown_provider", errorMessage: "Specified provider doesnt exist"});
+            } else {
+                if(req.userById.hashedPassword === undefined || req.userById.hashedPassword === null) {
+                    res.json(400, {error: "password_not_set", errorMessage: "Cannot delete link when there's no password set"});
+                } else {
+                    switch(slug) {
+                        case 'facebook':
+                            req.userById.facebookId = null;
+                            req.userById.facebookAccessToken = null;
+                        break;
+                    }
+
+                    req.userById.save();
+
+                    res.status(204).json({});
+                }
+            }
+        } else {
+            res.status(403).json({error: "Action forbidden!"});
+        }
+    }, 
+    function(err) {
+        res.status(500).json({error: "Server error"});
+    });
+}
 function setup(app) {
     app.namespace('/api/v1', function(){
         app.put('/users/forgot-password', putUsersForgotPasswordLimiter, putUsersForgotPassword);
         app.patch('/users/change-password', patchUsersChangePasswordLimiter, patchUsersChangePassword);
+
+        app.get('/users/:id/links', getUserLinksLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, getUserLinks);
+        app.post('/users/:id/links/:slug', postUserLinkLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, postUserLink);
+        app.delete('/users/:id/links/:slug', deleteUserLinkLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, deleteUserLink);
 
         app.post('/users', postUserLimiter, postUser);
         app.get('/users/me', getUsersMeLimiter, passport.authenticate('bearer', { session: false }), getUsersMe);
@@ -232,7 +329,6 @@ function setup(app) {
         app.patch('/users/:id', patchUserLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, patchUser);
         app.delete('/users/:id', deleteUserLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, deleteUser);
 
-        app.get('/users/:id/links', getUserLinksLimiter, passport.authenticate('bearer', { session: false }), fetchUserById, getUserLinks);
 
 
     });
