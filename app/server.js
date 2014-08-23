@@ -11,9 +11,6 @@ var db = require('app/modules/db');
 var log = require("app/modules/logger");
 var redis = require("app/modules/redis");
 
-app.set("views", __dirname);
-app.set("view engine", "jade");
-
 app.use(passport.initialize());
 app.use(bodyParser.json())
    .use(bodyParser.urlencoded({ extended: false }));

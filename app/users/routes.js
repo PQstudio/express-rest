@@ -39,7 +39,7 @@ function getUser(req, res, next) {
 }
 
 var postUserLimiter = rate(10, 20);
-function postUser(req, res) {
+function postUser(req, res, next) {
     var user = new UserModel({
         email: req.body.email,
         password: req.body.password,
@@ -58,6 +58,13 @@ function postUser(req, res) {
             if(err.name == 'ValidationError') {
                 res.statusCode = 400;
                 res.send(err);
+            } else {
+                var error = new Error();
+                error.status = 422;
+                error.inner = err;
+                error.message = 'User already exists';
+                error.code = 'user_exists';
+                next(error);
             }             
         }
     });
