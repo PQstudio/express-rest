@@ -9,6 +9,7 @@ var app = express();
 var db = require('app/modules/db');
 
 var log = require("app/modules/logger");
+var redis = require("app/modules/redis");
 
 app.set("views", __dirname);
 app.set("view engine", "jade");
@@ -26,13 +27,35 @@ app.use(bodyParser.json())
     require(routePath)(app);
 });
 
-app.use(require("app/middleware").notFound);
+app.use(require("app/middleware").fatal);
 
-app.listen(config.express.port, config.express.ip, function (error) {
+var server = app.listen(config.express.port, config.express.ip, function (error) {
     if (error) {
         log.error("unable to listen for connections", error);
         process.exit(10);
     }
     log.info("express is listening on http://" +
         config.express.ip + ":" + config.express.port);
+});
+
+var io = require('socket.io').listen(server);
+
+var id = null;
+
+io.sockets.on('connection', function (socket) {
+  socket.join('system');   
+  socket.on('room', function(room) {
+      id = room;
+        socket.join(room);
+        console.log("user joined to room: %s", room);
+    });
+});
+
+redis.psubscribe("user:*");
+redis.psubscribe("system");
+
+redis.on("pmessage", function(pattern, channel, message){
+    console.log("client channel recieve from channel : %s, the message : %s", channel, message);
+
+    io.sockets.in(channel).json.send(message);
 });

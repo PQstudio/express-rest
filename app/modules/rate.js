@@ -1,4 +1,4 @@
-var redis = require("app/modules/redis");
+var redis = require("app/modules/redis").publisher;
 var rate = require("express-rate/lib/rate");
 
 var redisHandler = new rate.Redis.RedisRateHandler({client: redis});

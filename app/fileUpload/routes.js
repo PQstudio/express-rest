@@ -9,7 +9,7 @@ var log = require('app/modules/logger');
 var rate = require('app/modules/rate');
 
 var postFilesLimiter = rate(10, 20);
-function postFiles(req, res) {
+function postFiles(req, res, next) {
     var form = new formidable.IncomingForm();
     var file = new FileModel({
     });
@@ -43,7 +43,7 @@ function postFiles(req, res) {
       file.filename = file.uniqueId+ext;
       fs.copy(temp_path, newLocation + file.filename, function(err) {  
           if (err) {
-              res.json({errors:err});
+              next(err);
           } else {
               // delete older than 5 minutes
               var now = new Date();
