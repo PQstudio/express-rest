@@ -23,7 +23,7 @@ var request = require('request');
 
 
 var getUsersMeLimiter = rate(10, 20);
-function getUsersMe(req, res) {
+function getUsersMe(req, res, next) {
     var accessToken = req.headers.authorization.substring(7);
     //redisPublisher.publish("user:" + accessToken, JSON.stringify({user: userGetScreen(req.user)}));
     //redisPublisher.publish("system", "{\"message\": \"do wszystkich!\"}");

@@ -26,6 +26,7 @@ app.use(bodyParser.json())
 
 app.use(require("app/middleware").fatal);
 
+
 var server = app.listen(config.express.port, config.express.ip, function (error) {
     if (error) {
         log.error("unable to listen for connections", error);
